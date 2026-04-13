@@ -23,7 +23,6 @@ pub struct LintRuleMeta {
     /// schemars::JsonSchema
     config: Option<Ident>,
     /// The version of oxlint in which this rule was first available.
-    #[cfg(feature = "ruledocs")]
     version: Option<LitStr>,
 }
 
@@ -89,7 +88,6 @@ impl Parse for LintRuleMeta {
         // Do not provide a default value here so that it can be set there instead.
         let mut fix: Option<Ident> = None;
         let mut config: Option<Ident> = None;
-        #[cfg(feature = "ruledocs")]
         let mut version: Option<LitStr> = None;
 
         // remaining options are `key = value` pairs, with the exception of
@@ -119,12 +117,7 @@ impl Parse for LintRuleMeta {
                 // version = "x.y.z"
                 "version" => {
                     input.parse::<Token!(=)>()?;
-                    #[cfg(feature = "ruledocs")]
                     version.replace(input.parse()?);
-                    #[cfg(not(feature = "ruledocs"))]
-                    {
-                        let _ = input.parse::<LitStr>()?;
-                    }
                 }
                 _ => {
                     if input.peek(Token!(=)) || fix.is_some() {
@@ -165,7 +158,6 @@ impl Parse for LintRuleMeta {
             documentation,
             used_in_test: false,
             config,
-            #[cfg(feature = "ruledocs")]
             version,
         })
     }
@@ -186,7 +178,6 @@ pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
         documentation,
         used_in_test,
         config,
-        #[cfg(feature = "ruledocs")]
         version,
     } = metadata;
 
@@ -254,9 +245,6 @@ pub fn declare_oxc_lint(metadata: LintRuleMeta) -> TokenStream {
         }),
     };
 
-    #[cfg(not(feature = "ruledocs"))]
-    let version: Option<proc_macro2::TokenStream> = None;
-    #[cfg(feature = "ruledocs")]
     let version = version.map(|v| {
         quote! {
             const VERSION: Option<&'static str> = Some(#v);
